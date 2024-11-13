@@ -17,6 +17,8 @@ let draggedElementIndex = null; // Stocke l'index de l'élément en cours de dé
 
 // Fonction pour ajouter une tâche au DOM et attacher les événements
 function addTaskToDOM(taskText, index) {
+  console.log("Ajout de la tâche au DOM:", taskText);  // Debug: Affiche la tâche ajoutée
+
   // Crée un élément div pour la tâche et ajoute la classe "task"
   const task_el = document.createElement("div");
   task_el.classList.add("task");
@@ -85,14 +87,17 @@ function addTaskToDOM(taskText, index) {
   task_delete_el.addEventListener("click", () => {
     // Supprime la tâche du tableau
     todos.splice(index, 1);
+    console.log("Tâche supprimée:", todos);  // Debug: Affiche la liste après suppression
+
     // Supprime l'élément de tâche de l'interface utilisateur
     task_el.remove();
+
     // Met à jour localStorage
     localStorage.setItem("todos", JSON.stringify(todos));
   });
 
   // --- Drag and Drop Events ---
-
+  
   // Quand le drag commence, on mémorise l'index de la tâche en cours de drag
   task_el.addEventListener("dragstart", () => {
     draggedElementIndex = index;
@@ -102,7 +107,6 @@ function addTaskToDOM(taskText, index) {
   // Quand le drag termine, on enlève les styles
   task_el.addEventListener("dragend", () => {
     task_el.classList.remove("dragging");
-    // Revenir à un curseur standard après drag task_el.style.cursor = "pointer"; 
   });
 
   // Empêche le comportement par défaut du navigateur pour le dragover
@@ -110,6 +114,7 @@ function addTaskToDOM(taskText, index) {
     e.preventDefault();
     const afterElement = getDragAfterElement(list_el, e.clientY);
     const currentDraggingElement = document.querySelector(".dragging");
+
     if (afterElement == null) {
       list_el.appendChild(currentDraggingElement);
     } else {
@@ -121,11 +126,13 @@ function addTaskToDOM(taskText, index) {
   task_el.addEventListener("drop", () => {
     const droppedIndex = Array.from(list_el.children).indexOf(task_el);
     const draggedTask = todos[draggedElementIndex];
-    
+
     // On enlève l'élément de l'ancienne position et on l'ajoute à la nouvelle position
-    todos.splice(draggedElementIndex, 1); // Supprimer de l'ancienne position
-    todos.splice(droppedIndex, 0, draggedTask); // Ajouter à la nouvelle position
-    
+    todos.splice(draggedElementIndex, 1);
+    todos.splice(droppedIndex, 0, draggedTask);
+
+    console.log("Nouvel ordre des tâches:", todos);  // Debug: Affiche l'ordre après le drag
+
     // Met à jour localStorage avec le nouvel ordre
     localStorage.setItem("todos", JSON.stringify(todos));
   });
@@ -154,7 +161,7 @@ form.addEventListener("submit", (e) => {
   const task = input.value;
 
   if (!task) {
-    alert("Il n'y a pas de task");
+    alert("Il n'y a pas de tâche");
     return;
   }
 
