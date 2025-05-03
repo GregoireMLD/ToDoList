@@ -16,20 +16,25 @@ const list_el = document.querySelector("#tasks");
 let draggedElementIndex = null; // Stocke l'index de l'élément en cours de déplacement
 
 // Fonction pour ajouter une tâche au DOM et attacher les événements
-function addTaskToDOM(taskText, index) {
-  console.log("Ajout de la tâche au DOM:", taskText);  // Debug: Affiche la tâche ajoutée
+function addTaskToDOM(taskText, index, completed = false) {
+  console.log("Ajout de la tâche au DOM:", taskText);
 
   // Crée un élément div pour la tâche et ajoute la classe "task"
   const task_el = document.createElement("div");
   task_el.classList.add("task");
-  task_el.setAttribute("draggable", "true"); // Rendre l'élément draggable
+  task_el.setAttribute("draggable", "true");
 
   // Crée un div pour contenir le contenu de la tâche
   const task_content_el = document.createElement("div");
   task_content_el.classList.add("content");
 
-  // Ajoute le contenu de la tâche au conteneur de la tâche
-  task_el.appendChild(task_content_el);
+  // Crée le champ checkbox pour marquer la tâche comme terminée
+  const task_checkbox = document.createElement("input");
+  task_checkbox.type = "checkbox";
+  task_checkbox.checked = completed; // Coche la case si la tâche est terminée
+
+  // Ajoute le checkbox au contenu de la tâche
+  task_content_el.appendChild(task_checkbox);
 
   // Crée un champ input pour la tâche avec un texte non modifiable
   const task_input_el = document.createElement("input");
@@ -40,6 +45,11 @@ function addTaskToDOM(taskText, index) {
 
   // Ajoute le champ de saisie au contenu de la tâche
   task_content_el.appendChild(task_input_el);
+
+  // Applique un style barré si la tâche est terminée
+  if (completed) {
+    task_input_el.style.textDecoration = "line-through";
+  }
 
   // Crée un div pour contenir les boutons d'action (éditer/supprimer)
   const task_actions_el = document.createElement("div");
@@ -60,6 +70,7 @@ function addTaskToDOM(taskText, index) {
   task_actions_el.appendChild(task_delete_el);
 
   // Ajoute la section des actions (boutons) à l'élément de tâche
+  task_el.appendChild(task_content_el);
   task_el.appendChild(task_actions_el);
 
   // Ajoute l'élément de la tâche au DOM (affichage)
@@ -68,16 +79,13 @@ function addTaskToDOM(taskText, index) {
   // Logique pour le bouton "EDIT"
   task_edit_el.addEventListener("click", () => {
     if (task_edit_el.innerText.toLowerCase() === "edit") {
-      // Permet d'éditer la tâche (rendre le champ modifiable)
       task_input_el.removeAttribute("readonly");
       task_input_el.focus();
       task_edit_el.innerText = "SAVE";
     } else {
-      // Sauvegarde les modifications et empêche la modification de nouveau
       task_input_el.setAttribute("readonly", "readonly");
       task_edit_el.innerText = "EDIT";
 
-      // Met à jour le tableau des tâches et le sauvegarde dans localStorage
       todos[index].text = task_input_el.value;
       localStorage.setItem("todos", JSON.stringify(todos));
     }
@@ -85,31 +93,28 @@ function addTaskToDOM(taskText, index) {
 
   // Logique pour le bouton "SUPR"
   task_delete_el.addEventListener("click", () => {
-    // Supprime la tâche du tableau
     todos.splice(index, 1);
-    console.log("Tâche supprimée:", todos);  // Debug: Affiche la liste après suppression
-
-    // Supprime l'élément de tâche de l'interface utilisateur
     task_el.remove();
+    localStorage.setItem("todos", JSON.stringify(todos));
+  });
 
-    // Met à jour localStorage
+  // Logique pour le checkbox (marquer comme terminée)
+  task_checkbox.addEventListener("change", () => {
+    todos[index].completed = task_checkbox.checked;
+    task_input_el.style.textDecoration = task_checkbox.checked ? "line-through" : "none";
     localStorage.setItem("todos", JSON.stringify(todos));
   });
 
   // --- Drag and Drop Events ---
-  
-  // Quand le drag commence, on mémorise l'index de la tâche en cours de drag
   task_el.addEventListener("dragstart", () => {
     draggedElementIndex = index;
     task_el.classList.add("dragging");
   });
 
-  // Quand le drag termine, on enlève les styles
   task_el.addEventListener("dragend", () => {
     task_el.classList.remove("dragging");
   });
 
-  // Empêche le comportement par défaut du navigateur pour le dragover
   list_el.addEventListener("dragover", (e) => {
     e.preventDefault();
     const afterElement = getDragAfterElement(list_el, e.clientY);
@@ -122,18 +127,13 @@ function addTaskToDOM(taskText, index) {
     }
   });
 
-  // Quand l'élément est lâché, on met à jour l'ordre dans le tableau todos
   task_el.addEventListener("drop", () => {
     const droppedIndex = Array.from(list_el.children).indexOf(task_el);
     const draggedTask = todos[draggedElementIndex];
 
-    // On enlève l'élément de l'ancienne position et on l'ajoute à la nouvelle position
     todos.splice(draggedElementIndex, 1);
     todos.splice(droppedIndex, 0, draggedTask);
 
-    console.log("Nouvel ordre des tâches:", todos);  // Debug: Affiche l'ordre après le drag
-
-    // Met à jour localStorage avec le nouvel ordre
     localStorage.setItem("todos", JSON.stringify(todos));
   });
 }
@@ -181,5 +181,5 @@ form.addEventListener("submit", (e) => {
 
 // Boucle sur toutes les tâches sauvegardées pour les afficher à l'ouverture de la page
 todos.forEach((todo, index) => {
-  addTaskToDOM(todo.text, index);
+  addTaskToDOM(todo.text, index, todo.completed);
 });
